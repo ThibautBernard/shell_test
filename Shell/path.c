@@ -36,7 +36,7 @@ int main(void)
 	while(path[i])
 	{
 		putchar(path[i]);
-		if (path[i] == '/' && i > 0 || path[i + 1] == '\0')
+		if (path[i] == ':' && i > 0 || path[i + 1] == '\0')
 		{
 			putchar('\n');;
 		}

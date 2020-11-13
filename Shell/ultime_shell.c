@@ -5,8 +5,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-void _prompt(char **env)
+void _prompt()
 {
+  extern char **environ;
+
 	char *prompt;
 //	setenv("PS1", ">", 0);
 	if ((prompt = getenv("PS1")) == NULL)
@@ -27,14 +29,25 @@ void fill_args_toargv(char *temp, char **argv, char *delimiters)
 	}
 	argv[i] = NULL;
 }
-int main(int ac, char **av, char **env) 
+
+char **parsing(char *buffer, int len)
+{
+	char delimiters[] = " \t\r\n\v\f";
+	char *temp, **av;
+	temp = strtok(buffer, delimiters);
+	av = malloc(sizeof(char)*len);
+	if (av == NULL)
+		return (NULL);
+	fill_args_toargv(temp, av, delimiters);
+	return (av);
+}
+int main(int ac, char **av) 
 {
 	pid_t child_pid;
-	int re, i = 0, status;
-	char *buffer = NULL, **argv, *temp;
+	int nb, i = 0, status;
+	char *buffer = NULL, **argv;
 	size_t len = 0;
-	char delimiters[] = "; \t\r\n\v\f";
-	_prompt(env);
+	_prompt();
 	while(1)
 	{
 		child_pid = fork();
@@ -45,22 +58,23 @@ int main(int ac, char **av, char **env)
   	}
 		if (child_pid == 0)
 		{
-			re = getline(&buffer, &len, stdin);
-			temp = strtok(buffer, delimiters);
-			argv = malloc(sizeof(char)*len);
-			fill_args_toargv(temp, argv, delimiters);
-			if (execve(argv[0], argv, env) == -1)
+			nb = getline(&buffer, &len, stdin);
+			argv = parsing(buffer, len);
+			if (execve(argv[0], argv, NULL) == -1)
 			{
 				perror(av[0]);
-				free(temp);
 				free(argv);
+				free(buffer);
 				break;
+				exit(0);
 			}
 		}
 		else
+		{
 			wait(&status);
+			WEXITSTATUS(&status);
+		}
 	}
-//	free(buffer);
-//	free(temp);
+	free(argv);
 	return (0);
 }
